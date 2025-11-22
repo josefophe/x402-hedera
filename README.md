@@ -111,6 +111,9 @@ The server exposes:
 - `GET /weather` – free endpoint
 - `GET /hedera-usdc` – pay $0.001 USDC on Hedera
 - `GET /hedera-native` – pay 0.5 HBAR natively
+For HederaDeFai
+- `GET /signal` - free endpoint
+- `GET /paid-signal` - Hedera testnet hUSDT payment ($0.003)
 
 ## Run the client
 
@@ -121,7 +124,7 @@ cd examples/typescript/clients/axios
 cp .env-local .env
 ```
 
-Set `RESOURCE_SERVER_URL` (default `http://localhost:4021`), `PRIVATE_KEY` for the paying account, and leave `ENDPOINT_PATH` as `/hedera-native` to exercise native HBAR payments. You can switch it to `/hedera-usdc` to test USDC payments instead.
+Set `RESOURCE_SERVER_URL` (default `http://localhost:4021`), `PRIVATE_KEY` for the paying account, and leave `ENDPOINT_PATH` as `/paid-signal` , `/hedera-native` to exercise native HBAR payments. You can switch it to `/hedera-usdc` to test USDC payments instead.
 
 Run the client:
 
@@ -154,7 +157,24 @@ Expect to see logs showing the transaction hash and the JSON payload returned fr
   }
 }
 ```
-
+```
+{
+  message: 'You paid $0.003 with hUSDT on Hedera! Unlocking premium trading signal',
+  data: {
+    signal: 'BTC/USDT Trade Signal',
+    body: 'Buy BTC at $95,000, target $97,000, stop loss $94,000',
+    paid_with: 'hUSDT',
+    token_id: '0.0.7274170',
+    network: 'hedera-testnet'
+  }
+}
+{
+  success: true,
+  payer: '0.0.7243485',
+  transaction: '0.0.7243485@1763773239.467790039',
+  network: 'hedera-testnet'
+}
+```
 You can also replay the flow manually with `curl`:
 
 ```bash
