@@ -5,6 +5,7 @@ config();
 
 const facilitatorUrl = process.env.FACILITATOR_URL as Resource;
 const payTo = process.env.ADDRESS as `0x${string}` | SolanaAddress | HederaAddress;
+const feePayer = process.env.FEE_PAYER as HederaAddress; // optional, funded with HBAR
 
 if (!facilitatorUrl || !payTo) {
   console.error("Missing required environment variables");
@@ -16,10 +17,14 @@ console.log("facilitatorUrl", facilitatorUrl);
 
 const app = express();
 
+// -----------------------------
+// x402 Payment Middleware
+// -----------------------------
 app.use(
   paymentMiddleware(
     payTo,
     {
+      // Weather / Hedera payments
       "GET /hedera-usdc": {
         price: "$0.001",
         network: "hedera-testnet",
@@ -34,6 +39,11 @@ app.use(
         },
         network: "hedera-testnet",
       },
+      // Trading signal payment
+      "GET /paid-signal": {
+        price: "$0.003",
+        network: "hedera-testnet",
+      },
     },
     {
       url: facilitatorUrl,
@@ -41,6 +51,9 @@ app.use(
   ),
 );
 
+// -----------------------------
+// Public Endpoints
+// -----------------------------
 app.get("/weather", (req, res) => {
   res.send({
     report: {
@@ -50,7 +63,18 @@ app.get("/weather", (req, res) => {
   });
 });
 
-// Hedera endpoints
+app.get("/signal", (req, res) => {
+  res.send({
+    report: {
+      signal: "BTC/USDT Trade Signal",
+      body: "Buy BTC at $90,000, target $92,000, stop loss $89,000",
+    },
+  });
+});
+
+// -----------------------------
+// Paid Endpoints (Hedera x402)
+// -----------------------------
 app.get("/hedera-usdc", (req, res) => {
   res.send({
     message: "You paid $0.001 with USDC on Hedera!",
@@ -75,9 +99,27 @@ app.get("/hedera-native", (req, res) => {
   });
 });
 
+app.get("/paid-signal", (req, res) => {
+  res.send({
+    message: "You paid $0.003 with hUSDT on Hedera! Unlocking premium trading signal",
+    data: {
+      signal: "BTC/USDT Trade Signal",
+      body: "Buy BTC at $95,000, target $97,000, stop loss $94,000",
+      paid_with: "hUSDT",
+      token_id: "0.0.7274170",
+      network: "hedera-testnet",
+    },
+  });
+});
+
+// -----------------------------
+// Start Server
+// -----------------------------
 app.listen(4021, () => {
   console.log(`Server listening at http://localhost:${4021}`);
   console.log("  GET /weather");
-  console.log("  GET /hedera-usdc - Hedera testnet USDC payment ($0.05)");
+  console.log("  GET /signal");
+  console.log("  GET /hedera-usdc - Hedera testnet USDC payment ($0.001)");
   console.log("  GET /hedera-native - Hedera testnet HBAR payment (0.5 HBAR)");
+  console.log("  GET /paid-signal - Hedera testnet hUSDT payment ($0.003)");
 });
